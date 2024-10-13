@@ -17,6 +17,7 @@ class DatabaseService:
         try:
             # Get the MongoDB URI from the environment variables
             mongodb_uri = os.getenv('DB_URL')
+            print(f'MongoDB URI: {mongodb_uri}')
             
             # Create a MongoDB client with increased timeouts
             self.client = MongoClient(mongodb_uri, 
