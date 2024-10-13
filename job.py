@@ -15,6 +15,10 @@ class JobManager:
 
 async def run_scheduler():
     job_manager = JobManager()
+    
+    # Run the job immediately
+    await job_manager.resume_propositions_job()
+    
     schedule.every(30).minutes.do(lambda: asyncio.create_task(job_manager.resume_propositions_job()))
     
     while True:
@@ -22,7 +26,6 @@ async def run_scheduler():
         await asyncio.sleep(1)
 
 async def main():
-    # check if has internet connection
     def has_internet_connection():
         try:
             requests.get('https://www.google.com', timeout=5)
@@ -37,9 +40,8 @@ async def main():
         print("No internet connection. Exiting...")
         return
 
-    print('Jobs started. Running every 30 minutes.')
+    print('Jobs started. Running immediately and then every 30 minutes.')
 
-    # Run the scheduler
     await run_scheduler()
 
 if __name__ == "__main__":
