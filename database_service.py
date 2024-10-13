@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from bson import ObjectId
+from pymongo.errors import ConnectionFailure
 
 # Load environment variables
 load_dotenv()
@@ -17,14 +18,20 @@ class DatabaseService:
             # Get the MongoDB URI from the environment variables
             mongodb_uri = os.getenv('DB_URL')
             
-            # Create a MongoDB client
-            self.client = MongoClient(mongodb_uri)
+            # Create a MongoDB client with increased timeouts
+            self.client = MongoClient(mongodb_uri, 
+                                      serverSelectionTimeoutMS=30000,
+                                      connectTimeoutMS=30000,
+                                      socketTimeoutMS=30000)
+            
+            # Check if the connection is successful by calling server_info
+            self.client.server_info()  # This will raise an exception if connection fails
             
             # Connect to the database (let's call it 'resume_db')
             self.db = self.client['resume_db']
             
             print("Connected to MongoDB successfully!")
-        except Exception as e:
+        except ConnectionFailure as e:
             print(f"Error connecting to MongoDB: {e}")
 
     async def store_resume(self, resume_data):
