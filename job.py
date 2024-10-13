@@ -26,8 +26,11 @@ def has_internet_connection():
         return True
     except requests.ConnectionError:
         return False
-      
-if not has_internet_connection():
+
+has_connection = has_internet_connection()
+print(f'Has connection: {has_connection}')
+
+if not has_connection:
     print("No internet connection. Exiting...")
     exit()
 
