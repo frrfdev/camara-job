@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 import schedule
-from resume_propositions import start_resume_process
+from resume_propositions import start_resume_process, is_processing
 import requests
 
 class JobManager:
@@ -16,12 +16,9 @@ class JobManager:
 async def run_scheduler():
     job_manager = JobManager()
     
-    # Run the job immediately
-    await job_manager.resume_propositions_job()
-    
     while True:
-        await asyncio.sleep(1800)  # Sleep for 30 minutes
         await job_manager.resume_propositions_job()
+        await asyncio.sleep(30)  # Sleep for 30 seconds
 
 async def main():
     def has_internet_connection():
@@ -38,12 +35,9 @@ async def main():
         print("No internet connection. Exiting...")
         return
 
-    print('Jobs started. Running immediately and then every 30 minutes.')
+    print('Jobs started. Running every 30 seconds.')
 
     await run_scheduler()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Shutting down...")
+    asyncio.run(main())

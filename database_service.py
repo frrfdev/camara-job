@@ -20,16 +20,13 @@ class DatabaseService:
             print(f'MongoDB URI: {mongodb_uri}')
             
             # Create an AsyncIOMotorClient
-            self.client = AsyncIOMotorClient(mongodb_uri, 
-                                             serverSelectionTimeoutMS=30000,
-                                             connectTimeoutMS=30000,
-                                             socketTimeoutMS=30000)
+            self.client = AsyncIOMotorClient(mongodb_uri)
             
             # Connect to the database (let's call it 'resume_db')
             self.db = self.client['resume_db']
             
             print("Connected to MongoDB successfully!")
-        except ConnectionFailure as e:
+        except Exception as e:
             print(f"Error connecting to MongoDB: {e}")
 
     async def store_resume(self, resume_data):
@@ -50,9 +47,6 @@ class DatabaseService:
         try:
             resumes_collection = self.db['resumes']
             resume = await resumes_collection.find_one({'proposition_number': proposition_number})
-            if resume is None:
-                print(f"No resume found for proposition number: {proposition_number}")
-                return None
             return resume
         except Exception as e:
             print(f"Error retrieving resume: {e}")
