@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 import schedule
 from resume_propositions import start_resume_process
+import requests
 
 class JobManager:
     def __init__(self):
@@ -17,6 +18,18 @@ class JobManager:
         self.loop.run_until_complete(self.resume_propositions_job())
 
 now = datetime.now()
+
+# check if has internet connection
+def has_internet_connection():
+    try:
+        requests.get('https://www.google.com', timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+      
+if not has_internet_connection():
+    print("No internet connection. Exiting...")
+    exit()
 
 job_manager = JobManager()
 schedule.every(20).seconds.do(job_manager.run_job)
