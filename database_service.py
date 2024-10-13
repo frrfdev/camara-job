@@ -35,13 +35,13 @@ class DatabaseService:
         except ConnectionFailure as e:
             print(f"Error connecting to MongoDB: {e}")
 
-    async def store_resume(self, resume_data):
+    def store_resume(self, resume_data):
         try:
             # Create a collection called 'resumes' if it doesn't exist
             resumes_collection = self.db['resumes']
             
             # Insert the resume data into the collection
-            result = await resumes_collection.insert_one(resume_data)
+            result = resumes_collection.insert_one(resume_data)
             
             # Return the inserted document's ID
             return str(result.inserted_id)

@@ -6,6 +6,7 @@ from proposition_agent import PropositionAgent
 from stream_data_to_array import parse_stream_to_json_array
 from database_service import DatabaseService
 import asyncio
+import time
 
 load_dotenv(override=True)
 
@@ -14,27 +15,55 @@ TOKEN = os.getenv('TOKEN')
 # Global variables
 resume_queue = asyncio.Queue()
 propositions_in_queue = set()
-workers_running = False
-workers = []
+is_processing = False
+
+async def resume_with_timer(proposition_agent, token, full_text, proposition_id):
+    start_time = time.time()
+    
+    async def timer():
+        elapsed_time = 0
+        while True:
+            print(f'Resuming proposition {proposition_id} - Elapsed time: {elapsed_time} seconds')
+            await asyncio.sleep(1)
+            elapsed_time += 1
+
+    timer_task = asyncio.create_task(timer())
+    resume = await proposition_agent.resume_proposition(token, full_text)
+    timer_task.cancel()
+
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f'Resuming proposition {proposition_id} completed in {duration:.2f} seconds')
+    return resume
 
 async def process_resume(proposition_agent):
+    global is_processing
     while True:
+        if is_processing:
+            await asyncio.sleep(1)  # Wait if currently processing
+            continue
+        
+        is_processing = True
         proposition_file = await resume_queue.get()
         try:
             # transform pdf to images
             pdf_converter = PDFConverter()
+            print(f'Converting PDF to images for proposition {proposition_file["id"]}')
             images = pdf_converter.pdf_to_images(proposition_file['file'])
             
             # extract text from images
             full_text = ''
-            for image in images:
+            for index, image in enumerate(images):
                 image_extraction = ImageExtractor()
+                print(f'Extracting text from image {index} for proposition {proposition_file["id"]}')
                 full_text += image_extraction.extract_text_from_image(image)
             
             # resume proposition text
-            resume = await proposition_agent.resume_proposition(TOKEN, full_text)
+            print(f'Starting to resume proposition {proposition_file["id"]}')
+            resume = await resume_with_timer(proposition_agent, TOKEN, full_text, proposition_file["id"])
             
             if resume:
+                print(f'Parsing resume for proposition {proposition_file["id"]}')
                 resume_json = parse_stream_to_json_array(resume)
                 full_resume = ''
                 for item in resume_json:
@@ -44,6 +73,7 @@ async def process_resume(proposition_agent):
                 db_service = DatabaseService()
                 
                 # Store the resume
+                print(f'Storing resume for proposition {proposition_file["id"]}')
                 resume_id = await db_service.store_resume({
                     "resume": full_resume,
                     "url": proposition_file['url'],
@@ -65,14 +95,12 @@ async def process_resume(proposition_agent):
             print(f"Error processing resume: {e}")
         finally:
             resume_queue.task_done()
+            is_processing = False
 
-async def start_workers(num_workers=5):
-    global workers_running, workers
-    if not workers_running:
-        workers_running = True
-        proposition_agent = PropositionAgent()
-        workers = [asyncio.create_task(process_resume(proposition_agent)) for _ in range(num_workers)]
-        print(f"Started {num_workers} worker(s)")
+async def start_workers():
+    proposition_agent = PropositionAgent()
+    asyncio.create_task(process_resume(proposition_agent))
+    print("Started 1 worker")
 
 async def add_propositions_to_queue():
     proposition_agent = PropositionAgent()
