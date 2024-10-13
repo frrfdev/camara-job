@@ -1,21 +1,26 @@
 from datetime import datetime
 import schedule
 import time
+import asyncio
+from resume_propositions import start_resume_process
 
-def hello_world():
-    print("hello world")
+class JobManager:
+    def __init__(self):
+        self.count = 1
 
-# Get current time
+    def resume_propositions_job(self):
+        print(f"Running job #{self.count}")
+        asyncio.run(start_resume_process())
+        self.count += 1
+
 now = datetime.now()
 
-# Schedule the job every day at 21:10
-schedule.every().day.at("21:10").do(hello_world)
+job_manager = JobManager()
+schedule.every(30).seconds.do(job_manager.resume_propositions_job)
+print('Jobs started. Running every 20 minutes.')
 
-# If the current time is past 21:10, run the job immediately
-if now.hour >= 21 and now.minute >= 10:
-    hello_world()
-
-print('jobs started')
+# Run the job immediately
+job_manager.resume_propositions_job()
 
 while True:
     schedule.run_pending()
