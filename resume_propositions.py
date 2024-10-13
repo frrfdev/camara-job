@@ -11,14 +11,11 @@ load_dotenv(override=True)
 
 TOKEN = os.getenv('TOKEN')
 
-# Create a global queue
+# Global variables
 resume_queue = asyncio.Queue()
-
-# Set to keep track of propositions in the queue
 propositions_in_queue = set()
-
-# Flag to track if workers are running
 workers_running = False
+workers = []
 
 async def process_resume(proposition_agent):
     while True:
@@ -70,7 +67,7 @@ async def process_resume(proposition_agent):
             resume_queue.task_done()
 
 async def start_workers(num_workers=5):
-    global workers_running
+    global workers_running, workers
     if not workers_running:
         workers_running = True
         proposition_agent = PropositionAgent()
@@ -98,9 +95,5 @@ async def add_propositions_to_queue():
     print(f'Skipped {skipped_count} propositions already in the queue')
 
 async def start_resume_process():
-    await start_workers()  # Ensure workers are running
-    await add_propositions_to_queue()  # Add new propositions to the queue
-
-# If you want to run this script directly
-if __name__ == "__main__":
-    asyncio.run(start_resume_process(1))  # Start with count=1 for testing
+    await start_workers()
+    await add_propositions_to_queue()

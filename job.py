@@ -1,27 +1,35 @@
+import asyncio
 from datetime import datetime
 import schedule
-import time
-import asyncio
 from resume_propositions import start_resume_process
 
 class JobManager:
     def __init__(self):
         self.count = 1
+        self.loop = asyncio.get_event_loop()
 
-    def resume_propositions_job(self):
+    async def resume_propositions_job(self):
         print(f"Running job #{self.count}")
-        asyncio.run(start_resume_process())
+        await start_resume_process()
         self.count += 1
+
+    def run_job(self):
+        self.loop.run_until_complete(self.resume_propositions_job())
 
 now = datetime.now()
 
 job_manager = JobManager()
-schedule.every(30).seconds.do(job_manager.resume_propositions_job)
+schedule.every(20).seconds.do(job_manager.run_job)
 print('Jobs started. Running every 20 minutes.')
 
 # Run the job immediately
-job_manager.resume_propositions_job()
+job_manager.run_job()
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)  # wait one second
+try:
+    while True:
+        schedule.run_pending()
+        job_manager.loop.run_until_complete(asyncio.sleep(1))
+except KeyboardInterrupt:
+    print("Shutting down...")
+finally:
+    job_manager.loop.close()
