@@ -83,16 +83,25 @@ async def add_propositions_to_queue():
     added_count = 0
     skipped_count = 0
     
+    database_service = DatabaseService()
+    
     for proposition_file in propositions_files:
-        if proposition_file['id'] not in propositions_in_queue:
-            await resume_queue.put(proposition_file)
-            propositions_in_queue.add(proposition_file['id'])
-            added_count += 1
-        else:
+        proposition_number = proposition_agent.get_proposition_number(proposition_file['id'])
+        resume = database_service.get_resume_by_proposition_number(proposition_number)
+        
+        if resume is not None:
+            print(f"Resume already exists for proposition {proposition_number}")
             skipped_count += 1
+        else:
+            if proposition_file['id'] not in propositions_in_queue:
+                await resume_queue.put(proposition_file)
+                propositions_in_queue.add(proposition_file['id'])
+                added_count += 1
+            else:
+                skipped_count += 1
     
     print(f'Added {added_count} propositions to the queue')
-    print(f'Skipped {skipped_count} propositions already in the queue')
+    print(f'Skipped {skipped_count} propositions already in the queue or database')
 
 async def start_resume_process():
     await start_workers()

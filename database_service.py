@@ -52,6 +52,9 @@ class DatabaseService:
         try:
             resumes_collection = self.db['resumes']
             resume = resumes_collection.find_one({'proposition_number': proposition_number})
+            if resume is None:
+                print(f"No resume found for proposition number: {proposition_number}")
+                return None
             return resume
         except Exception as e:
             print(f"Error retrieving resume: {e}")
