@@ -47,7 +47,7 @@ class PropositionAgent:
         return url.split('=')[-1]
     
     async def get_last_propositions(self):
-        url = f"{BASE_CAMARA_URL}/api/v2/proposicoes?ordem=DESC&ordenarPor=id&itens=20"
+        url = f"{BASE_CAMARA_URL}/api/v2/proposicoes?pagina=1&ordem=DESC&ordenarPor=id&itens=20"
         
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
