@@ -18,7 +18,7 @@ async def run_scheduler():
     
     while True:
         await job_manager.resume_propositions_job()
-        await asyncio.sleep(30)  # Sleep for 30 seconds
+        await asyncio.sleep(1800)  # Sleep for 30 seconds
 
 async def main():
     def has_internet_connection():
