@@ -7,6 +7,7 @@ from stream_data_to_array import parse_stream_to_json_array
 from database_service import DatabaseService
 import asyncio
 import time
+from datetime import datetime, timezone
 
 load_dotenv(override=True)
 
@@ -72,12 +73,12 @@ async def process_resume(proposition_agent):
                 # Initialize the database service
                 db_service = DatabaseService()
                 
-                # Store the resume
                 print(f'Storing resume for proposition {proposition_file["id"]}')
                 resume_id = await db_service.store_resume({
                     "resume": full_resume,
                     "url": proposition_file['url'],
                     "proposition_number": proposition_agent.get_proposition_number(proposition_file['id']),
+                    "created_at": datetime.now(timezone.utc)
                 })
                 if resume_id:
                     print(f"Resume stored successfully with ID: {resume_id}")

@@ -19,11 +19,9 @@ async def run_scheduler():
     # Run the job immediately
     await job_manager.resume_propositions_job()
     
-    schedule.every(30).minutes.do(lambda: asyncio.create_task(job_manager.resume_propositions_job()))
-    
     while True:
-        schedule.run_pending()
-        await asyncio.sleep(1)
+        await asyncio.sleep(1800)  # Sleep for 30 minutes
+        await job_manager.resume_propositions_job()
 
 async def main():
     def has_internet_connection():
