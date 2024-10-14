@@ -8,6 +8,7 @@ from database_service import DatabaseService
 import asyncio
 import time
 from datetime import datetime, timezone
+import json
 
 load_dotenv(override=True)
 
@@ -58,19 +59,26 @@ async def process_resume(proposition_agent, proposition_file):
         print(f'Starting to resume proposition {proposition_file["id"]}')
         resume = await resume_with_timer(proposition_agent, TOKEN, full_text, proposition_file["id"])
         
-        if resume:
+        if resume and isinstance(resume, list):
             print(f'Parsing resume for proposition {proposition_file["id"]}')
-            resume_json = parse_stream_to_json_array(resume)
-            full_resume = ''
-            for item in resume_json:
-                full_resume += item['response']
+            
+            # Clean up the resume data
+            cleaned_resume = []
+            for item in resume:
+                if isinstance(item, dict) and 'title' in item and 'description' in item:
+                    cleaned_resume.append({
+                        'title': item['title'].strip(),
+                        'description': item['description'].strip()
+                    })
+                else:
+                    print(f"Skipping invalid item in resume: {item}")
             
             # Initialize the database service
             db_service = DatabaseService()
             
             print(f'Storing resume for proposition {proposition_file["id"]}')
             resume_id = await db_service.store_resume({
-                "resume": full_resume,
+                "resume": cleaned_resume,
                 "url": proposition_file['url'],
                 "proposition_number": proposition_agent.get_proposition_number(proposition_file['id']),
                 "created_at": datetime.now(timezone.utc)
@@ -83,24 +91,33 @@ async def process_resume(proposition_agent, proposition_file):
             # Don't forget to close the connection when you're done
             db_service.close_connection()
         else:
-            print("No file content to upload.")
+            print(f"Invalid resume format for proposition {proposition_file['id']}")
+            print(f"Resume content: {resume}")
     except Exception as e:
         print(f"Error processing resume: {e}")
+        print(f"Resume content: {resume}")
 
 async def process_propositions():
     global _is_processing
     proposition_agent = PropositionAgent()
     while True:
-        proposition_file = await propositions_to_process.get()
+        if propositions_to_process.empty():
+            _is_processing = False
+            await asyncio.sleep(1)  # Wait a bit before checking again
+            continue
+        
         _is_processing = True
+        proposition_file = await propositions_to_process.get()
         await process_resume(proposition_agent, proposition_file)
         propositions_to_process.task_done()
-        _is_processing = False
 
 async def add_propositions_to_process():
     proposition_agent = PropositionAgent()
     propositions = await proposition_agent.get_last_propositions()
     propositions_files = await proposition_agent.get_propositions_documents(propositions)
+    #propositions_files = await proposition_agent.get_propositions_documents([{
+		#	"id": "2462265"
+		#}])
     print(f'Found {len(propositions_files)} propositions to resume')
     
     added_count = 0
@@ -126,5 +143,5 @@ async def add_propositions_to_process():
 async def start_resume_process():
     global _background_task
     await add_propositions_to_process()
-    if not is_processing() and (_background_task is None or _background_task.done()):
+    if _background_task is None or _background_task.done():
         _background_task = asyncio.create_task(process_propositions())
