@@ -4,7 +4,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from pymongo.errors import ConnectionFailure
 
-# Load environment variables
 load_dotenv()
 
 class DatabaseService:
@@ -51,6 +50,39 @@ class DatabaseService:
         except Exception as e:
             print(f"Error retrieving resume: {e}")
             return None
+
+    async def store_proposition_in_queue(self, propositionNumber):
+        try:
+            queue_collection = self.db['queue']
+            await queue_collection.insert_one({'proposition_number': propositionNumber})
+        except Exception as e:
+            print(f"Error storing proposition in queue: {e}")
+            return None
+          
+    async def get_proposition_from_queue(self, proposition_number):
+        try:
+            queue_collection = self.db['queue']
+            proposition = await queue_collection.find_one({'proposition_number': proposition_number})
+            return proposition
+        except Exception as e:
+            print(f"Error getting proposition from queue: {e}")
+            return None
+          
+    async def get_all_propositions_from_queue(self):
+        try:
+            queue_collection = self.db['queue']
+            propositions = await queue_collection.find().to_list(length=None)
+            return propositions
+        except Exception as e:
+            print(f"Error getting all propositions from queue: {e}")
+            return None
+          
+    async def delete_proposition_from_queue(self, proposition_number):
+        try:
+            queue_collection = self.db['queue']
+            await queue_collection.delete_one({'proposition_number': proposition_number})
+        except Exception as e:
+            print(f"Error deleting proposition from queue: {e}")
 
     def close_connection(self):
         if self.client:

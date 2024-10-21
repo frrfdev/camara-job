@@ -127,8 +127,8 @@ Se alguma informação não estiver disponível no texto, use "Informação não
                 data = await response.json()
                 return data['dados']
     
-    async def get_proposition_details(self, proposition):
-        url = f"{BASE_CAMARA_URL}/api/v2/proposicoes/{proposition['id']}"
+    async def get_proposition_details(self, proposition_id):
+        url = f"{BASE_CAMARA_URL}/api/v2/proposicoes/{proposition_id}"
         
         headers = {
             'User-Agent': 'Mozilla/5.0',
@@ -176,7 +176,7 @@ Se alguma informação não estiver disponível no texto, use "Informação não
             if resume:
                 continue
             
-            details = await self.get_proposition_details(proposition)
+            details = await self.get_proposition_details(proposition_id)
             file_content = await self.download_proposition(details['urlInteiroTeor'])
             documents.append({
                 'file': file_content,
