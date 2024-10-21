@@ -12,6 +12,8 @@ async def start_resume_process():
 	propositions = await proposition_agent.get_last_propositions()
 	print(f"Found {len(propositions)} propositions")
 	propositions = [proposition for proposition in propositions if not await database_service.get_proposition_from_queue(proposition['id'])]
+ #filter propositions that are already resumed
+	propositions = [proposition for proposition in propositions if not await database_service.get_resume_by_proposition_number(proposition['id'])]
 	print(f"Found {len(propositions)} propositions to process")
 
 	for proposition in propositions:
