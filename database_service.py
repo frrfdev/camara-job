@@ -54,7 +54,7 @@ class DatabaseService:
     async def store_proposition_in_queue(self, propositionNumber):
         try:
             queue_collection = self.db['queue']
-            await queue_collection.insert_one({'proposition_number': propositionNumber})
+            await queue_collection.insert_one({'proposition_number': propositionNumber, 'status': 'pending'})
         except Exception as e:
             print(f"Error storing proposition in queue: {e}")
             return None
@@ -83,6 +83,14 @@ class DatabaseService:
             await queue_collection.delete_one({'proposition_number': proposition_number})
         except Exception as e:
             print(f"Error deleting proposition from queue: {e}")
+
+  
+    async def update_proposition_status(self, proposition_number, status):
+        try:
+            queue_collection = self.db['queue']
+            await queue_collection.update_one({'proposition_number': proposition_number}, {'$set': {'status': status}})
+        except Exception as e:
+            print(f"Error updating proposition status: {e}")
 
     def close_connection(self):
         if self.client:
