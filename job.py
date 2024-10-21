@@ -1,7 +1,5 @@
 import asyncio
-from datetime import datetime
-import schedule
-from resume_propositions import start_resume_process, is_processing
+from resume_propositions import start_resume_process
 import requests
 
 class JobManager:
